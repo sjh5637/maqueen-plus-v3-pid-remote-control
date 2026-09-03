@@ -140,8 +140,8 @@ basic.forever(function () {
     // differential mix: steer 양수 = 우바퀴 빨라짐 = 좌회전
     const targetL = clamp(b - s, -255, 255)
     const targetR = clamp(b + s, -255, 255)
-    integL = driveWheel(maqueenPlusV2.MyEnumMotor.LeftMotor, maqueenPlusV2.DirectionType2.Left, targetL, 1.0, true)
-    integR = driveWheel(maqueenPlusV2.MyEnumMotor.RightMotor, maqueenPlusV2.DirectionType2.Right, targetR, ratioR, false)
+    driveWheel(maqueenPlusV2.MyEnumMotor.LeftMotor, maqueenPlusV2.DirectionType2.Left, targetL, 1.0, true)
+    driveWheel(maqueenPlusV2.MyEnumMotor.RightMotor, maqueenPlusV2.DirectionType2.Right, targetR, ratioR, false)
 
     // ===== 진단용 USB 콘솔 출력 (값이 바뀔 때만) =====
     if (s != lastShownSteer) {
