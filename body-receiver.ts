@@ -94,6 +94,8 @@ function runCalibration(): void {
     steer = 0
     integL = 0
     integR = 0
+    outL = 0
+    outR = 0
     calibReq = false
     music.playTone(1320, 300)
     // 보정비 표시 (예: "#12" = 1.2배)
