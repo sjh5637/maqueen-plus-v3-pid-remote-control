@@ -27,6 +27,8 @@ let centerY = 512
 let lastLedMs = 0
 let lastCalMs = 0
 let calibrating = false
+let lastSentSpeed = 9999    // 진단용: 직전 출력값
+let lastSentSteer = 9999
 
 function clamp(v: number, lo: number, hi: number): number {
     return Math.min(hi, Math.max(lo, v))
@@ -130,6 +132,17 @@ basic.forever(function () {
         led.plot(2, 4)
     } else {
         led.unplot(2, 4)
+    }
+
+    // ===== 진단용 USB 콘솔 출력 (값이 바뀔 때만) — 페어링 후 "데이터 보기"에서 확인 =====
+    if (speed != lastSentSpeed || steer != lastSentSteer) {
+        serial.writeLine("spd=" + speed + " steer=" + steer
+            + " A=" + (input.buttonIsPressed(Button.A) ? 1 : 0)
+            + " B=" + (input.buttonIsPressed(Button.B) ? 1 : 0)
+            + " E=" + (pins.digitalReadPin(BTN_E) == 0 ? 1 : 0)
+            + " F=" + (pins.digitalReadPin(BTN_F) == 0 ? 1 : 0))
+        lastSentSpeed = speed
+        lastSentSteer = steer
     }
 
     sendCmd(77, speed, steer)

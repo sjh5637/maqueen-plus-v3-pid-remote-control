@@ -139,6 +139,7 @@ basic.forever(function () {
     // 수신한 steer 값이 바뀔 때만 표시: 양수=← 화살표(좌회전), 음수=→ 화살표(우회전), 0=화면 지움
     if (s != lastShownSteer) {
         lastShownSteer = s
+        serial.writeLine("base=" + b + " steer=" + s + " L=" + targetL + " R=" + targetR)
         if (s > 0) {
             basic.showArrow(ArrowNames.West)
         } else if (s < 0) {
