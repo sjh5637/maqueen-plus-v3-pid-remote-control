@@ -13,6 +13,9 @@ micro:bit + Maqueen Plus V2.0 + DFR0536 GamePad 원격 조종 프로젝트.
 - 확장 라이브러리: `maqueenPlusV2=github:DFRobot/pxt-DFRobot_MaqueenPlus_v20`
 - 라디오 그룹: **61** (본체·조정기 동일)
 - 조정기 쪽 코드는 확장 라이브러리 미포함 (플레인 micro:bit API + radio만 사용)
+- **컴파일 검증 필수**: 로컬 빌드 불가이므로 코드를 넘기기 전 `docs/makecode-compile-checklist.md` 체크리스트로
+  API 존재 여부를 소스 대조 확인할 것. 확장 enum은 `maqueenPlusV2.` 한정 필수,
+  버퍼 수신은 `radio.onReceivedBuffer(cb)`, 화살표는 `ArrowNames`+`basic.showArrow`. 추측으로 API 쓰지 말 것.
 
 ## 파일
 

@@ -22,6 +22,7 @@ micro:bit **v2** + **Maqueen Plus V3**(DFRobot) 로봇을 **DFR0536 GamePad V3.0
 | `reference/maqueenPlusV2.ts` | 확장 라이브러리 소스 (API 참고용, 배포 대상 아님) |
 | `docs/specs/` | 설계 스펙 |
 | `docs/plans/` | 구현 계획 |
+| `docs/makecode-compile-checklist.md` | MakeCode 붙여넣기 전 API 검증 체크리스트 |
 
 ## 환경 / 의존성
 
