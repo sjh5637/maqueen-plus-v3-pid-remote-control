@@ -8,6 +8,9 @@
  *   'M'(77): v1=base speed(-255~255), v2=steer(-255~255)  steer 양수=좌회전
  *   'L'(76): LED 토글 (좌/우 동시)
  *   'C'(67): 직진 캘리브레이션 요청
+ *
+ * 주의: 이 확장의 enum(MyEnumMotor 등)은 namespace 안에 있어서 반드시
+ *       maqueenPlusV2.MyEnumMotor 형태로 한정해야 컴파일됨.
  */
 
 // ===== 튜닝 상수 =====
@@ -39,14 +42,14 @@ function clamp(v: number, lo: number, hi: number): number {
 }
 
 function applyLed(): void {
-    const sw = ledOn ? MyEnumSwitch.Open : MyEnumSwitch.Close
-    maqueenPlusV2.controlLED(MyEnumLed.LeftLed, sw)
-    maqueenPlusV2.controlLED(MyEnumLed.RightLed, sw)
+    const sw = ledOn ? maqueenPlusV2.MyEnumSwitch.Open : maqueenPlusV2.MyEnumSwitch.Close
+    maqueenPlusV2.controlLED(maqueenPlusV2.MyEnumLed.LeftLed, sw)
+    maqueenPlusV2.controlLED(maqueenPlusV2.MyEnumLed.RightLed, sw)
 }
 
 // 바퀴 1개 PI 제어 1스텝. 반환값: 갱신된 적분값
 // target: PWM 목표(+ 전진 / - 후진), ratio: 피드포워드 보정비
-function driveWheel(motor: MyEnumMotor, dirType: DirectionType2, target: number, integ: number, ratio: number): number {
+function driveWheel(motor: maqueenPlusV2.MyEnumMotor, dirType: maqueenPlusV2.DirectionType2, target: number, integ: number, ratio: number): number {
     if (Math.abs(target) < STOP_THRESHOLD) {
         maqueenPlusV2.controlMotorStop(motor)
         return 0
@@ -55,24 +58,24 @@ function driveWheel(motor: MyEnumMotor, dirType: DirectionType2, target: number,
     const err = targetCms - maqueenPlusV2.readRealTimeSpeed(dirType)
     integ = clamp(integ + err * (LOOP_MS / 1000), -I_LIMIT, I_LIMIT)
     const out = clamp(Math.round(FF_GAIN * targetCms * ratio + KP * err + KI * integ), 0, 255)
-    maqueenPlusV2.controlMotor(motor, target > 0 ? MyEnumDir.Forward : MyEnumDir.Backward, out)
+    maqueenPlusV2.controlMotor(motor, target > 0 ? maqueenPlusV2.MyEnumDir.Forward : maqueenPlusV2.MyEnumDir.Backward, out)
     return integ
 }
 
 // 캘리브레이션: 고정 PWM 전진 주행 중 좌/우 실측 속도 → 우바퀴 보정비 산출
 function runCalibration(): void {
-    basic.showIcon(IconNames.ArrowNorth)
+    basic.showArrow(ArrowNames.North)
     music.playTone(880, 200)
-    maqueenPlusV2.controlMotor(MyEnumMotor.AllMotor, MyEnumDir.Forward, CAL_PWM)
+    maqueenPlusV2.controlMotor(maqueenPlusV2.MyEnumMotor.AllMotor, maqueenPlusV2.MyEnumDir.Forward, CAL_PWM)
     let sumL = 0
     let sumR = 0
     const n = CAL_MS / CAL_SAMPLE_MS
     for (let i = 0; i < n; i++) {
         basic.pause(CAL_SAMPLE_MS)
-        sumL += maqueenPlusV2.readRealTimeSpeed(DirectionType2.Left)
-        sumR += maqueenPlusV2.readRealTimeSpeed(DirectionType2.Right)
+        sumL += maqueenPlusV2.readRealTimeSpeed(maqueenPlusV2.DirectionType2.Left)
+        sumR += maqueenPlusV2.readRealTimeSpeed(maqueenPlusV2.DirectionType2.Right)
     }
-    maqueenPlusV2.controlMotorStop(MyEnumMotor.AllMotor)
+    maqueenPlusV2.controlMotorStop(maqueenPlusV2.MyEnumMotor.AllMotor)
     const avgL = sumL / n
     const avgR = sumR / n
     if (avgR > 1) {
@@ -89,17 +92,16 @@ function runCalibration(): void {
     basic.showIcon(IconNames.Happy)
 }
 
-radio.onDataReceived(function () {
-    const buf = radio.readBuffer()
-    if (buf.length < 6) {
+radio.onReceivedBuffer(function (receivedBuffer: Buffer) {
+    if (receivedBuffer.length < 6) {
         return
     }
     lastRx = input.runningTime()
-    const cmd = buf.getNumber(NumberFormat.Int8LE, 0)
+    const cmd = receivedBuffer.getNumber(NumberFormat.Int8LE, 0)
     if (cmd == 77) {                        // 'M' 조종
         if (!calibReq) {                    // 캘리브레이션 중에는 무시
-            base = buf.getNumber(NumberFormat.Int16LE, 1)
-            steer = buf.getNumber(NumberFormat.Int16LE, 3)
+            base = receivedBuffer.getNumber(NumberFormat.Int16LE, 1)
+            steer = receivedBuffer.getNumber(NumberFormat.Int16LE, 3)
         }
     } else if (cmd == 76) {                 // 'L' LED 토글
         ledOn = !ledOn
@@ -129,7 +131,7 @@ basic.forever(function () {
     // differential mix: steer 양수 = 우바퀴 빨라짐 = 좌회전
     const targetL = clamp(b - s, -255, 255)
     const targetR = clamp(b + s, -255, 255)
-    integL = driveWheel(MyEnumMotor.LeftMotor, DirectionType2.Left, targetL, integL, 1.0)
-    integR = driveWheel(MyEnumMotor.RightMotor, DirectionType2.Right, targetR, integR, ratioR)
+    integL = driveWheel(maqueenPlusV2.MyEnumMotor.LeftMotor, maqueenPlusV2.DirectionType2.Left, targetL, integL, 1.0)
+    integR = driveWheel(maqueenPlusV2.MyEnumMotor.RightMotor, maqueenPlusV2.DirectionType2.Right, targetR, integR, ratioR)
     basic.pause(LOOP_MS)
 })
