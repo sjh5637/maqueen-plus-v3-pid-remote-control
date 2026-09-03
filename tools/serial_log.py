@@ -63,17 +63,22 @@ def main():
     print(f"로그 파일: {log_path}")
 
     try:
+        buf = b""
         while True:
-            raw = ser.readline()
-            if not raw:
+            n = ser.in_waiting
+            chunk = ser.read(n if n > 0 else 1)
+            if not chunk:
                 continue
-            line = raw.decode("utf-8", errors="ignore").strip()
-            if not line:
-                continue
-            stamp = datetime.now().strftime("%H:%M:%S.%f")[:-3]
-            print(f"[{stamp}] {line}", flush=True)
-            logf.write(f"[{stamp}] {line}\n")
-            logf.flush()
+            buf += chunk
+            while b"\n" in buf:
+                raw, buf = buf.split(b"\n", 1)
+                line = raw.decode("utf-8", errors="replace").strip("\r").strip()
+                if not line:
+                    continue
+                stamp = datetime.now().strftime("%H:%M:%S.%f")[:-3]
+                print(f"[{stamp}] {line}", flush=True)
+                logf.write(f"[{stamp}] {line}\n")
+                logf.flush()
     except KeyboardInterrupt:
         print("\n종료.")
     finally:
