@@ -36,6 +36,7 @@ let calibReq = false
 let ratioR = 1.0             // 우바퀴 피드포워드 보정비 (캘리브레이션 결과)
 let integL = 0
 let integR = 0
+let lastShownSteer = 9999   // 진단용: 마지막 화면 표시 steer 값
 
 function clamp(v: number, lo: number, hi: number): number {
     return Math.min(hi, Math.max(lo, v))
@@ -133,5 +134,19 @@ basic.forever(function () {
     const targetR = clamp(b + s, -255, 255)
     integL = driveWheel(maqueenPlusV2.MyEnumMotor.LeftMotor, maqueenPlusV2.DirectionType2.Left, targetL, integL, 1.0)
     integR = driveWheel(maqueenPlusV2.MyEnumMotor.RightMotor, maqueenPlusV2.DirectionType2.Right, targetR, integR, ratioR)
+
+    // ===== 진단용 화면 표시 (원인 파악 후 제거 예정) =====
+    // 수신한 steer 값이 바뀔 때만 표시: 양수=← 화살표(좌회전), 음수=→ 화살표(우회전), 0=화면 지움
+    if (s != lastShownSteer) {
+        lastShownSteer = s
+        if (s > 0) {
+            basic.showArrow(ArrowNames.West)
+        } else if (s < 0) {
+            basic.showArrow(ArrowNames.East)
+        } else {
+            basic.clearScreen()
+        }
+    }
+
     basic.pause(LOOP_MS)
 })

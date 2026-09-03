@@ -108,6 +108,30 @@ basic.forever(function () {
         }
     }
 
+    // ===== 진단용 화면 표시 (원인 파악 후 제거 예정) =====
+    // (0,2) 도트 = A 눌림, (4,2) 도트 = B 눌림
+    // (2,0) 도트 = E핀 LOW, (2,4) 도트 = F핀 LOW (아무것도 안 눌렀는데 켜져 있으면 버튼 회로 반전)
+    if (input.buttonIsPressed(Button.A)) {
+        led.plot(0, 2)
+    } else {
+        led.unplot(0, 2)
+    }
+    if (input.buttonIsPressed(Button.B)) {
+        led.plot(4, 2)
+    } else {
+        led.unplot(4, 2)
+    }
+    if (pins.digitalReadPin(BTN_E) == 0) {
+        led.plot(2, 0)
+    } else {
+        led.unplot(2, 0)
+    }
+    if (pins.digitalReadPin(BTN_F) == 0) {
+        led.plot(2, 4)
+    } else {
+        led.unplot(2, 4)
+    }
+
     sendCmd(77, speed, steer)
     basic.pause(LOOP_MS)
 })
