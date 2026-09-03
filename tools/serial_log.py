@@ -65,8 +65,24 @@ def main():
     try:
         buf = b""
         while True:
-            n = ser.in_waiting
-            chunk = ser.read(n if n > 0 else 1)
+            try:
+                n = ser.in_waiting
+                chunk = ser.read(n if n > 0 else 1)
+            except serial.SerialException:
+                # micro:bit 리부트 등으로 포트가 잠깐 끊김 → 재접속
+                print(f"[{args.tag}] 포트 끊김 — 2초 후 재접속 시도", flush=True)
+                try:
+                    ser.close()
+                except Exception:
+                    pass
+                time.sleep(2)
+                try:
+                    ser = serial.Serial(port, args.baud, timeout=1)
+                    buf = b""
+                    print(f"[{args.tag}] 재접속 완료", flush=True)
+                except serial.SerialException:
+                    continue
+                continue
             if not chunk:
                 continue
             buf += chunk
@@ -82,7 +98,10 @@ def main():
     except KeyboardInterrupt:
         print("\n종료.")
     finally:
-        ser.close()
+        try:
+            ser.close()
+        except Exception:
+            pass
         logf.close()
 
 
