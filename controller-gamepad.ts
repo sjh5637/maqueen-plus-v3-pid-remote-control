@@ -89,8 +89,8 @@ basic.forever(function () {
     }
 
     // 스틱 Y축: 전/후진 속도 (좌우로 치우쳐도 Y값 기준으로만 판단)
-    // 스틱 위(값 작음) = 전진(+), 아래 = 후진(-)
-    const dy = centerY - pins.analogReadPin(AnalogReadWritePin.P2)   // 위 = 양수
+    // 스틱 위 = 값이 커짐 (기존 검증된 코드 기준: P2 > 800 → 전진)
+    const dy = pins.analogReadPin(AnalogReadWritePin.P2) - centerY   // 위 = 양수
     let speed = 0
     if (dy > DEADZONE) {
         speed = clamp(Math.round(dy / Math.max(centerY, 1) * MAX_SPEED), 0, MAX_SPEED)
