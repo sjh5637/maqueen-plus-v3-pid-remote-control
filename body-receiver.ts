@@ -14,12 +14,13 @@
  */
 
 // ===== 튜닝 상수 =====
-const LOOP_MS = 50           // 제어 루프 주기 (ms)
+const LOOP_MS = 25           // 제어 루프 주기 (ms) — 짧을수록 진동 안 남
 const PWM_TO_CMS = 5         // PWM→cm/s 환산 (255 PWM ≈ 51 cm/s, 엔코더 상한)
-const KP = 10                // 비례 게인 (PWM per cm/s 오차) — 너무 크면 뿜뿜 진동
-const KI = 2                 // 적분 게인
-const I_LIMIT = 40           // 적분 클램프 (안티와인드업)
+const KP = 6                 // 비례 게인 (PWM per cm/s 오차) — 너무 크면 뿜뿜 진동
+const KI = 1                 // 적분 게인
+const I_LIMIT = 25           // 적분 클램프 (안티와인드업)
 const OUT_SLEW = 60          // 한 루프당 출력 PWM 변화 한도 (부드러운 가감속)
+const ACT_FILTER = 0.4       // 엔코더 저역통과 필터 계수 (새값 반영 비율, 작을수록 부드러움)
 const RATIO_MIN = 0.7        // 캘리브레이션 보정비 하한
 const RATIO_MAX = 1.4        // 캘리브레이션 보정비 상한
 const CAL_PWM = 150          // 캘리브레이션 주행 PWM
@@ -38,6 +39,8 @@ let integL = 0
 let integR = 0
 let outL = 0                // 슬루 제한용 직전 출력
 let outR = 0
+let filtL = 0               // 엔코더 필터링된 실측 속도 (cm/s)
+let filtR = 0
 let lastShownSteer = 9999   // 진단용: 직전 콘솔 출력 steer 값
 let lastShownBase = 9999    // 진단용: 직전 콘솔 출력 base 값
 let diagAct = 0             // 진단용: driveWheel이 마지막으로 읽은 실측 속도 (cm/s)
@@ -58,13 +61,17 @@ function applyLed(): void {
 function driveWheel(motor: maqueenPlusV2.MyEnumMotor, dirType: maqueenPlusV2.DirectionType2, target: number, ratio: number, isLeft: boolean): void {
     if (Math.abs(target) < STOP_THRESHOLD) {
         maqueenPlusV2.controlMotorStop(motor)
-        if (isLeft) { integL = 0; outL = 0 } else { integR = 0; outR = 0 }
+        if (isLeft) { integL = 0; outL = 0; filtL = 0 } else { integR = 0; outR = 0; filtR = 0 }
         return
     }
     const targetCms = Math.abs(target) / PWM_TO_CMS
-    const act = maqueenPlusV2.readRealTimeSpeed(dirType)
-    diagAct = act
-    const err = targetCms - act
+    // 엔코더 원시값은 요동침(새값/오래된 값 번갈아) → 저역통과 필터로 평활
+    const raw = maqueenPlusV2.readRealTimeSpeed(dirType)
+    let filt = isLeft ? filtL : filtR
+    filt = filt + ACT_FILTER * (raw - filt)
+    if (isLeft) { filtL = filt } else { filtR = filt }
+    diagAct = Math.round(filt * 10) / 10
+    const err = targetCms - filt
     let integ = isLeft ? integL : integR
     integ = clamp(integ + err * (LOOP_MS / 1000), -I_LIMIT, I_LIMIT)
     // 피드포워드 = 목표 PWM 그대로 (PWM→속도 선형 가정), PI는 잔여 오차만 보정
