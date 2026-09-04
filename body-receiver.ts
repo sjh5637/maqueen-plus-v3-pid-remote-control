@@ -39,6 +39,7 @@ let integR = 0
 let outL = 0                // 슬루 제한용 직전 출력
 let outR = 0
 let lastShownSteer = 9999   // 진단용: 직전 콘솔 출력 steer 값
+let lastShownBase = 9999    // 진단용: 직전 콘솔 출력 base 값
 
 function clamp(v: number, lo: number, hi: number): number {
     return Math.min(hi, Math.max(lo, v))
@@ -145,8 +146,9 @@ basic.forever(function () {
     driveWheel(maqueenPlusV2.MyEnumMotor.LeftMotor, maqueenPlusV2.DirectionType2.Left, targetL, 1.0, true)
     driveWheel(maqueenPlusV2.MyEnumMotor.RightMotor, maqueenPlusV2.DirectionType2.Right, targetR, ratioR, false)
 
-    // ===== 진단용 USB 콘솔 출력 (값이 바뀔 때만) =====
-    if (s != lastShownSteer) {
+    // ===== 진단용 USB 콘솔 출력 (base 또는 steer가 바뀔 때) =====
+    if (b != lastShownBase || s != lastShownSteer) {
+        lastShownBase = b
         lastShownSteer = s
         serial.writeLine("base=" + b + " steer=" + s + " L=" + targetL + " R=" + targetR)
     }
