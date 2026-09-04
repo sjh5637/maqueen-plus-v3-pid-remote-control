@@ -14,8 +14,8 @@
  */
 
 // ===== 튜닝 상수 =====
-const LOOP_MS = 25           // 제어 루프 주기 (ms) — 짧을수록 진동 안 남
-const PWM_TO_CMS = 5         // PWM→cm/s 환산 (255 PWM ≈ 51 cm/s, 엔코더 상한)
+const LOOP_MS = 50           // 제어 루프 주기 (ms) — 엔코더 레지스터 갱신 리듬에 맞춤
+const PWM_TO_CMS = 7         // PWM→cm/s 환산 (실측: 255 PWM ≈ 37 cm/s)
 const KP = 6                 // 비례 게인 (PWM per cm/s 오차) — 너무 크면 뿜뿜 진동
 const KI = 1                 // 적분 게인
 const I_LIMIT = 25           // 적분 클램프 (안티와인드업)
