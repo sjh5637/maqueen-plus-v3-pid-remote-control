@@ -40,6 +40,8 @@ let outL = 0                // 슬루 제한용 직전 출력
 let outR = 0
 let lastShownSteer = 9999   // 진단용: 직전 콘솔 출력 steer 값
 let lastShownBase = 9999    // 진단용: 직전 콘솔 출력 base 값
+let diagAct = 0             // 진단용: driveWheel이 마지막으로 읽은 실측 속도 (cm/s)
+let diagOut = 0             // 진단용: driveWheel이 마지막으로 낸 출력 PWM
 
 function clamp(v: number, lo: number, hi: number): number {
     return Math.min(hi, Math.max(lo, v))
@@ -60,7 +62,9 @@ function driveWheel(motor: maqueenPlusV2.MyEnumMotor, dirType: maqueenPlusV2.Dir
         return
     }
     const targetCms = Math.abs(target) / PWM_TO_CMS
-    const err = targetCms - maqueenPlusV2.readRealTimeSpeed(dirType)
+    const act = maqueenPlusV2.readRealTimeSpeed(dirType)
+    diagAct = act
+    const err = targetCms - act
     let integ = isLeft ? integL : integR
     integ = clamp(integ + err * (LOOP_MS / 1000), -I_LIMIT, I_LIMIT)
     // 피드포워드 = 목표 PWM 그대로 (PWM→속도 선형 가정), PI는 잔여 오차만 보정
@@ -68,6 +72,7 @@ function driveWheel(motor: maqueenPlusV2.MyEnumMotor, dirType: maqueenPlusV2.Dir
     const prev = isLeft ? outL : outR
     out = clamp(out, prev - OUT_SLEW, prev + OUT_SLEW)
     out = clamp(Math.round(out), 0, 255)
+    diagOut = out
     if (isLeft) { integL = integ; outL = out } else { integR = integ; outR = out }
     maqueenPlusV2.controlMotor(motor, target > 0 ? maqueenPlusV2.MyEnumDir.Forward : maqueenPlusV2.MyEnumDir.Backward, out)
 }
@@ -144,13 +149,21 @@ basic.forever(function () {
     const targetL = clamp(b - s, -255, 255)
     const targetR = clamp(b + s, -255, 255)
     driveWheel(maqueenPlusV2.MyEnumMotor.LeftMotor, maqueenPlusV2.DirectionType2.Left, targetL, 1.0, true)
+    const actL = diagAct
+    const outLpwm = diagOut
     driveWheel(maqueenPlusV2.MyEnumMotor.RightMotor, maqueenPlusV2.DirectionType2.Right, targetR, ratioR, false)
+    const actR = diagAct
+    const outRpwm = diagOut
 
-    // ===== 진단용 USB 콘솔 출력 (base 또는 steer가 바뀔 때) =====
-    if (b != lastShownBase || s != lastShownSteer) {
+    // ===== 진단용 USB 콘솔 출력: 주행 중엔 매 루프 출력 (진동 파형 관찰용) =====
+    if (b != 0 || s != 0) {
+        serial.writeLine("b=" + b + " s=" + s
+            + " | L: t=" + targetL + " a=" + actL + " o=" + outLpwm
+            + " | R: t=" + targetR + " a=" + actR + " o=" + outRpwm)
+    } else if (b != lastShownBase || s != lastShownSteer) {
         lastShownBase = b
         lastShownSteer = s
-        serial.writeLine("base=" + b + " steer=" + s + " L=" + targetL + " R=" + targetR)
+        serial.writeLine("stop b=0 s=0")
     }
 
     basic.pause(LOOP_MS)
